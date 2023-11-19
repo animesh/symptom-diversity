@@ -1,3 +1,5 @@
+#replace SCN/ with SCN/SCN/ in the following code
+#pip install openpyxl
 from collections import defaultdict
 import pandas as pd
 import numpy as np
@@ -12,7 +14,7 @@ def SCN_build():
     between symptoms and symptoms.
     :return:
     """
-    data = pd.read_excel('SCN/Input/Source data for construct symptom clinical association network.xlsx')
+    data = pd.read_excel('SCN/SCN/Input/Source data for construct symptom clinical association network.xlsx')
     data = list(data['Symptom cluster'])
     SCNNet = []
     SCN_edge_fre = {}
@@ -33,12 +35,12 @@ def SCN_build():
     SCNNet_edge_out = [[edge.split('|')[0], edge.split('|')[1], SCN_edge_fre[edge]] for edge in SCN_edge_fre.keys()]
     SCNNet_node_out = sorted(SCNNet_node_out, key=(lambda x: x[1]), reverse=True)
     SCNNet_edge_out = sorted(SCNNet_edge_out, key=(lambda x: x[2]), reverse=True)
-    writer = pd.ExcelWriter('SCN/tmp/Symptom clinical association network with frequency.xlsx', engine='openpyxl')
+    writer = pd.ExcelWriter('SCN/SCN/tmp/Symptom clinical association network with frequency.xlsx', engine='openpyxl')
     pd.DataFrame(SCNNet_node_out, columns=['Symptom', 'Frequency']).to_excel(excel_writer=writer, sheet_name='Node', index=False)
     pd.DataFrame(SCNNet_edge_out, columns=['Source', 'Target', 'Frequency']).to_excel(excel_writer=writer, sheet_name='Relationship', index=False)
     writer.save()
     writer.close()
-    pd.DataFrame(SCNNet, columns=['Source', 'Target']).to_csv('SCN/tmp/Symptom clinical association network.csv', index=False, encoding='utf-8')
+    pd.DataFrame(SCNNet, columns=['Source', 'Target']).to_csv('SCN/SCN/tmp/Symptom clinical association network.csv', index=False, encoding='utf-8')
 
 
 def cal_coef(network_path, node_diversity_path, out_path, columnList=[]):
@@ -71,12 +73,12 @@ def symptoGene():
     the correlation coefficients in the molecular network.
     :return:
     """
-    sym_CUI = pd.read_excel('SCN/Input/Symptom in SCN mapping to CUI symptom.xlsx')
-    CUI_gene = pd.read_excel('SCN/Input/341 CUI symptom with 3598 genes.xlsx')
+    sym_CUI = pd.read_excel('SCN/SCN/Input/Symptom in SCN mapping to CUI symptom.xlsx')
+    CUI_gene = pd.read_excel('SCN/SCN/Input/341 CUI symptom with 3598 genes.xlsx')
     gene_coef = pd.read_csv('ppi/gene_div_deg.csv')
     CUI_gene_coef = pd.merge(CUI_gene, gene_coef, on='gene')
     sym_gene_coef = pd.merge(CUI_gene_coef, sym_CUI, on='CUI code')
-    sym_gene_coef.to_excel('SCN/tmp/sym_geneDiv.xlsx', index=False)
+    sym_gene_coef.to_excel('SCN/SCN/tmp/sym_geneDiv.xlsx', index=False)
 
 
 def cal_nodeDiv():
@@ -87,28 +89,28 @@ def cal_nodeDiv():
     and the largest node diversity and maximum degree of related genes.
     :return:
     """
-    data = pd.read_excel('SCN/tmp/sym_geneDiv.xlsx')
+    data = pd.read_excel('SCN/SCN/tmp/sym_geneDiv.xlsx')
     data.drop_duplicates(['Symptom in SCN', 'gene'], inplace=True)
     res = data.sort_values(by='diversity', ascending=False)\
         .groupby('Symptom in SCN', as_index=False)[['Symptom in SCN (English)', 'gene', 'degree', 'diversity']]\
         .agg({'Symptom in SCN (English)': ['first'], 'gene': ['first', 'count'], 'degree': ['max'], 'diversity': ['first']})
     res.columns = ['Symptom in SCN', 'Symptom English name', 'gene name', 'gene number', 'Molecular network node degree', 'Molecular network node diversity']
-    res.to_excel('SCN/tmp/The manifestation of SCN symptoms in molecular networks.xlsx', index=False)
+    res.to_excel('SCN/SCN/tmp/The manifestation of SCN symptoms in molecular networks.xlsx', index=False)
 
 
 def merge():
-    data1 = pd.read_excel('SCN/tmp/The manifestation of SCN symptoms in molecular networks.xlsx')
-    data2 = pd.read_csv('SCN/tmp/SCN_nodes_coef.csv')
+    data1 = pd.read_excel('SCN/SCN/tmp/The manifestation of SCN symptoms in molecular networks.xlsx')
+    data2 = pd.read_csv('SCN/SCN/tmp/SCN_nodes_coef.csv')
     data1.set_index('Symptom in SCN', inplace=True)
     data2.set_index('Symptom in SCN', inplace=True)
     data = pd.concat([data1, data2], axis=1, join='inner')
-    data.to_excel('SCN/Correlation between PD and MGD of 116 symptoms.xlsx')
+    data.to_excel('SCN/SCN/Correlation between PD and MGD of 116 symptoms.xlsx')
 
 
 if __name__ == '__main__':
     SCN_build()
-    cal_coef('SCN/tmp/Symptom clinical association network.csv', 'NodeDiversity/SCN_NodeDiversity.txt',
-             'SCN/tmp/SCN_nodes_coef.csv', columnList=['Symptom in SCN', 'Phenotypic node degree in SCN',
+    cal_coef('SCN/SCN/tmp/Symptom clinical association network.csv', 'NodeDiversity/SCN_NodeDiversity.txt',
+             'SCN/SCN/tmp/SCN_nodes_coef.csv', columnList=['Symptom in SCN', 'Phenotypic node degree in SCN',
                                                        'Phenotypic node diversity in SCN'])
     cal_coef('ppi/Protein-protein interaction network.csv', 'NodeDiversity/PPI_NodeDiversity.txt',
              'ppi/gene_div_deg.csv', columnList=['gene', 'degree', 'diversity'])
